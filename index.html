@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Roosevelt Boulevard Subway Evaluation</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #f4f6f4;
+      font-family: Arial, sans-serif;
+    }
+
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+    }
+
+    .nav {
+      position: fixed;
+      bottom: 24px;
+      right: 32px;
+      z-index: 9999;
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: 1px solid #2e7d32;
+      background: rgba(255,255,255,0.9);
+      color: #1b5e20;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #e8f5e9;
+    }
+  </style>
+</head>
+
+<body>
+
+<iframe id="pageFrame" src="00_introduction.html"></iframe>
+
+<div class="nav">
+  <button onclick="prevPage()">← Previous</button>
+  <button onclick="nextPage()">Next →</button>
+</div>
+
+<script>
+  const pages = [
+    "00_introduction.html",
+    "01_bus_basemap.html",
+    "02_bus_metrics.html",
+    "03_subway_basemap.html",
+    "04_subway_metrics.html",
+    "05_priority_investment_map.html"
+  ];
+
+  let current = 0;
+
+  function updatePage() {
+    document.getElementById("pageFrame").src = pages[current];
+  }
+
+  function nextPage() {
+    if (current < pages.length - 1) {
+      current++;
+      updatePage();
+    }
+  }
+
+  function prevPage() {
+    if (current > 0) {
+      current--;
+      updatePage();
+    }
+  }
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "ArrowRight") nextPage();
+    if (e.key === "ArrowLeft") prevPage();
+  });
+</script>
+
+</body>
+</html>

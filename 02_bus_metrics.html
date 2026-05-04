@@ -173,8 +173,8 @@ body.theme-gray .top-card h2 {
     <div class="badge">MAP</div>
     <h1>Bus Service Metrics</h1>
     
-<p>Tract-level bus service metrics. Use the selector to switch indicators while keeping the same original data structure.</p>
-<div class="quote">Black outlines indicate tracts with subway service area values, following the original logic.</div>
+<p>Use the selector to switch indicators.</p>
+<div class="quote">Black outlines indicate the 52 tracts that have intersection with subway service area.</div>
 <div style="margin-top:24px;">
   <div class="card-title" style="color:#b9f6ca;">Metric</div>
   <select onchange="updateMetric(this.value)"><option value='bus_pop'>Population Served</option><option value='bus_green'>Accessible Green Space</option><option value='bus_poor_pop'>Low-Income Population Served</option><option value='bus_area_share'>Share of Tract Served</option><option value='bus_area_acres'>Service Area (Acres)</option></select>
@@ -185,7 +185,7 @@ body.theme-gray .top-card h2 {
     <div id="map"></div>
     <div class="top-card">
       <h2>Bus Service Metrics</h2>
-      <p>Tract-level service, population, green access, and low-income population metrics</p>
+      <p>If NO SUBWAY: Public transportation served population and green access</p>
     </div>
     
 <div class="right-card">
@@ -195,7 +195,7 @@ body.theme-gray .top-card h2 {
   <div class="scale-labels"><span>Low</span><span>High</span></div>
   <hr style="border:none;border-top:1px solid rgba(27,94,32,0.12);margin:14px 0;">
   <div class="card-title">Summary</div>
-  <div class="summary"><p>BUS SERVICE AREA SUMMARY</p><p>(within 52 subway-served tracts)</p><br><p>GREEN SPACE ACCESS</p><p>• Total green area: 46.3 km²</p><p>• Accessible within 10-min subway area: 0.86 km²</p><p>• Accessible share: 1.9%</p><br><p>POPULATION SERVICE</p><p>• Population served: 24,297</p><p>• Poor population served: 6,485</p></div>
+  <div class="summary"><p>BUS SERVICE AREA SUMMARY</p><p>(within 52 subway-served tracts)</p><br><p>GREEN SPACE ACCESS</p><p>• Accessible within 10-min subway area: 0.41 km²</p><br><p>POPULATION SERVICE</p><p>• Population served: 24,297</p><p>• Poor population served: 6,485</p></div>
 </div>
 
   </main>

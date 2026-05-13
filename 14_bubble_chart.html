@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Station Profile — Bubble Chart</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inconsolata:wght@400;500&family=Lato:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0f14; font-family: 'Lato', sans-serif; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: #0b0f14;
+  border-right: 1px solid #1f2d3d;
+  padding: 2.5vh 1.8rem 2.5vh 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: #1f2d3d; border-radius: 2px; }
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 2px;
+  background: #3dbdaa;
+}
+
+.sb-top { display: flex; flex-direction: column; gap: 0.6rem; }
+.sb-bottom { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 1rem; }
+
+.s-num { font-family: 'Inconsolata', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: #7a8898; }
+.s-tag { display: inline-block; font-family: 'Inconsolata', monospace; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.18rem 0.55rem; border-radius: 2px; background: rgba(61,189,170,0.15); color: #3dbdaa; width: fit-content; }
+.s-title { font-family: 'Playfair Display', serif; font-size: clamp(1.1rem, 1.6vw, 1.5rem); font-weight: 400; line-height: 1.2; color: #e8e2d8; }
+.s-desc { font-size: 0.75rem; color: #7a8898; line-height: 1.6; }
+
+.s-axes { display: flex; flex-direction: column; gap: 0.3rem; }
+.axis-item { display: flex; align-items: flex-start; gap: 0.5rem; font-family: 'Inconsolata', monospace; font-size: 0.68rem; color: #7a8898; line-height: 1.45; }
+.axis-dot { width: 6px; height: 6px; border-radius: 50%; background: #7a8898; flex-shrink: 0; margin-top: 4px; }
+.axis-item strong { color: #e8e2d8; font-weight: 500; }
+
+.s-find { border-left: 2px solid #3dbdaa; padding-left: 0.8rem; font-family: 'Inconsolata', monospace; font-size: 0.7rem; line-height: 1.6; color: #3dbdaa; }
+
+.s-legend { display: flex; flex-direction: column; gap: 0.3rem; }
+.sl-title { font-family: 'Inconsolata', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: #7a8898; margin-bottom: 0.15rem; }
+.sl-divider { border-top: 1px solid #1f2d3d; margin: 0.3rem 0; }
+.sl-row { display: flex; align-items: center; gap: 0.45rem; font-family: 'Inconsolata', monospace; font-size: 0.65rem; color: #7a8898; }
+.sl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sl-bubble-row { display: flex; align-items: center; gap: 0.45rem; font-family: 'Inconsolata', monospace; font-size: 0.65rem; color: #7a8898; }
+
+/* ── CHART ── */
+.chart-area { background: #ffffff; position: relative; overflow: hidden; }
+#chart { width: 100%; height: 100%; display: block; }
+
+.axis path, .axis line { stroke: #e0e0e0; }
+.axis text { font-family: 'Inconsolata', monospace; font-size: 10px; fill: #888; }
+.axis-label { font-family: 'Inconsolata', monospace; font-size: 10px; fill: #999; letter-spacing: 0.08em; text-transform: uppercase; }
+.grid line { stroke: #f5f5f5; stroke-dasharray: 3,3; }
+.mean-line { stroke: #dddddd; stroke-width: 1; stroke-dasharray: 4,3; }
+.mean-label { font-family: 'Inconsolata', monospace; font-size: 9px; fill: #bbbbbb; }
+.quadrant-label { font-family: 'Inconsolata', monospace; font-size: 9px; fill: #e0e0e0; }
+.station-label { font-family: 'Inconsolata', monospace; font-size: 10px; fill: #333; pointer-events: none; }
+.bubble { cursor: pointer; transition: opacity 0.2s; }
+.bubble.faded { opacity: 0.1; }
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: #161e28;
+  border: 1px solid #1f2d3d;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px;
+  color: #e8e2d8;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 999;
+  min-width: 190px;
+}
+.tooltip.show { opacity: 1; }
+.t-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.t-seg { font-size: 10px; color: #7a8898; margin-bottom: 6px; }
+.t-row { display: flex; justify-content: space-between; gap: 1.5rem; color: #7a8898; margin-bottom: 3px; }
+.t-row span:last-child { color: #e8e2d8; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-top">
+      <div class="s-num">Station Profile</div>
+      <span class="s-tag">Chart · 3 Indicators</span>
+      <div class="s-title">Three Public Health Indicators</div>
+      <div class="s-desc">Each bubble represents one proposed station, plotted across three public health dimensions simultaneously.</div>
+      <div class="s-axes">
+        <div class="axis-item"><div class="axis-dot"></div><div><strong>X-axis:</strong> Social Vulnerability Index (SVI) — higher = more vulnerable</div></div>
+        <div class="axis-item"><div class="axis-dot"></div><div><strong>Y-axis:</strong> Serious crashes in walkshed — higher = more dangerous</div></div>
+        <div class="axis-item"><div class="axis-dot"></div><div><strong>Bubble size:</strong> Distance to nearest HC facility (km) — larger = farther away</div></div>
+      </div>
+      <div class="s-find">Bustleton stands out across all three dimensions — high SVI, most crashes, and 1.57 km to nearest healthcare. Southampton has the farthest healthcare access at 2.42 km.</div>
+    </div>
+
+    <div class="sb-bottom">
+      <div class="s-legend">
+        <div class="sl-title">Segment Type</div>
+        <div class="sl-row"><div class="sl-dot" style="background:#4a9ebb"></div>Underground</div>
+        <div class="sl-row"><div class="sl-dot" style="background:#e05a3a"></div>Elevated</div>
+        <div class="sl-row"><div class="sl-dot" style="background:#5aad8f"></div>At-Grade</div>
+        <div class="sl-divider"></div>
+        <div class="sl-title">HC Distance (bubble size)</div>
+        <div class="sl-bubble-row">
+          <svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="none" stroke="#7a8898" stroke-width="1.2"/></svg>
+          <span>0.5 km</span>
+        </div>
+        <div class="sl-bubble-row">
+          <svg width="22" height="22"><circle cx="11" cy="11" r="9" fill="none" stroke="#7a8898" stroke-width="1.2"/></svg>
+          <span>1.5 km</span>
+        </div>
+        <div class="sl-bubble-row">
+          <svg width="30" height="30"><circle cx="15" cy="15" r="13" fill="none" stroke="#7a8898" stroke-width="1.2"/></svg>
+          <span>2.5 km</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-area">
+    <svg id="chart"></svg>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const stations = [
+  { name:"Bustleton",   svi:0.916, crashes:18, hc_km:1.57, segment:"Underground" },
+  { name:"Rising Sun",  svi:0.924, crashes:9,  hc_km:0.62, segment:"Underground" },
+  { name:"Cottman",     svi:0.746, crashes:12, hc_km:1.43, segment:"Underground" },
+  { name:"Broad-Erie",  svi:0.975, crashes:7,  hc_km:0.50, segment:"Underground" },
+  { name:"North 9th",   svi:0.953, crashes:7,  hc_km:1.43, segment:"Underground" },
+  { name:"Welsh-Grant", svi:0.836, crashes:8,  hc_km:0.50, segment:"Elevated"    },
+  { name:"Adams",       svi:0.909, crashes:5,  hc_km:0.66, segment:"At-Grade"    },
+  { name:"Pratt",       svi:0.898, crashes:4,  hc_km:1.50, segment:"Underground" },
+  { name:"Rhawn",       svi:0.726, crashes:4,  hc_km:0.22, segment:"Underground" },
+  { name:"Red Lion",    svi:0.870, crashes:0,  hc_km:1.80, segment:"Elevated"    },
+  { name:"Southampton", svi:0.751, crashes:1,  hc_km:2.42, segment:"Elevated"    },
+  { name:"Old Lincoln", svi:0.416, crashes:0,  hc_km:0.91, segment:"Elevated"    },
+];
+
+const segColors = { "Underground":"#4a9ebb", "Elevated":"#e05a3a", "At-Grade":"#5aad8f" };
+const tooltip = document.getElementById("tooltip");
+
+function draw() {
+  const svg = d3.select("#chart");
+  svg.selectAll("*").remove();
+
+  const W = document.querySelector('.chart-area').clientWidth;
+  const H = document.querySelector('.chart-area').clientHeight;
+  const margin = { top: 28, right: 28, bottom: 52, left: 52 };
+  const iW = W - margin.left - margin.right;
+  const iH = H - margin.top - margin.bottom;
+
+  svg.attr("width", W).attr("height", H);
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const xScale = d3.scaleLinear().domain([0.37, 1.02]).range([0, iW]);
+  const yScale = d3.scaleLinear().domain([-2, 20]).range([iH, 0]);
+  const rScale = d3.scaleSqrt().domain([0, 2.5]).range([5, 28]);
+
+  // Grid
+  g.append("g").attr("class","grid").call(d3.axisLeft(yScale).tickSize(-iW).tickFormat("")).call(g=>g.select(".domain").remove());
+  g.append("g").attr("class","grid").attr("transform",`translate(0,${iH})`).call(d3.axisBottom(xScale).tickSize(-iH).tickFormat("")).call(g=>g.select(".domain").remove());
+
+  // Mean lines
+  const mSVI = d3.mean(stations, d=>d.svi);
+  const mCr  = d3.mean(stations, d=>d.crashes);
+  g.append("line").attr("class","mean-line").attr("x1",xScale(mSVI)).attr("x2",xScale(mSVI)).attr("y1",0).attr("y2",iH);
+  g.append("line").attr("class","mean-line").attr("x1",0).attr("x2",iW).attr("y1",yScale(mCr)).attr("y2",yScale(mCr));
+  g.append("text").attr("class","mean-label").attr("x",xScale(mSVI)+4).attr("y",12).text(`Mean SVI ${mSVI.toFixed(3)}`);
+  g.append("text").attr("class","mean-label").attr("x",iW-4).attr("y",yScale(mCr)-4).attr("text-anchor","end").text(`Mean crashes ${mCr.toFixed(1)}`);
+
+  // Quadrant labels
+  g.append("text").attr("class","quadrant-label").attr("x",4).attr("y",12).text("Low SVI · High Crashes");
+  g.append("text").attr("class","quadrant-label").attr("x",iW-4).attr("y",12).attr("text-anchor","end").text("High SVI · High Crashes");
+  g.append("text").attr("class","quadrant-label").attr("x",4).attr("y",iH-6).text("Low SVI · Low Crashes");
+  g.append("text").attr("class","quadrant-label").attr("x",iW-4).attr("y",iH-6).attr("text-anchor","end").text("High SVI · Low Crashes");
+
+  // Axes
+  g.append("g").attr("class","axis").attr("transform",`translate(0,${iH})`).call(d3.axisBottom(xScale).ticks(6).tickFormat(d=>d.toFixed(2)));
+  g.append("g").attr("class","axis").call(d3.axisLeft(yScale).ticks(6));
+  g.append("text").attr("class","axis-label").attr("x",iW/2).attr("y",iH+42).attr("text-anchor","middle").text("Social Vulnerability Index (SVI)");
+  g.append("text").attr("class","axis-label").attr("transform","rotate(-90)").attr("x",-iH/2).attr("y",-40).attr("text-anchor","middle").text("Serious Crashes in Walkshed");
+
+  // Bubbles
+  g.selectAll(".bubble").data(stations).enter().append("circle").attr("class","bubble")
+    .attr("cx",d=>xScale(d.svi)).attr("cy",d=>yScale(d.crashes)).attr("r",d=>rScale(d.hc_km))
+    .attr("fill",d=>segColors[d.segment]).attr("fill-opacity",0.45)
+    .attr("stroke",d=>segColors[d.segment]).attr("stroke-width",1.5)
+    .on("mouseover",function(event,d){
+      d3.selectAll(".bubble").classed("faded",true);
+      d3.select(this).classed("faded",false).attr("fill-opacity",0.85);
+      tooltip.innerHTML=`<div class="t-name" style="color:${segColors[d.segment]}">${d.name}</div><div class="t-seg">${d.segment} Station</div><div class="t-row"><span>SVI</span><span>${d.svi.toFixed(3)}</span></div><div class="t-row"><span>Crashes</span><span>${d.crashes}</span></div><div class="t-row"><span>Nearest HC</span><span>${d.hc_km} km</span></div>`;
+      tooltip.classList.add("show");
+      moveTooltip(event);
+    })
+    .on("mousemove",moveTooltip)
+    .on("mouseleave",function(){
+      d3.selectAll(".bubble").classed("faded",false).attr("fill-opacity",0.45);
+      tooltip.classList.remove("show");
+    });
+
+  // Labels
+  stations.forEach(d=>{
+    g.append("text").attr("class","station-label")
+      .attr("x",xScale(d.svi)).attr("y",yScale(d.crashes)-rScale(d.hc_km)-5)
+      .attr("text-anchor","middle").text(d.name);
+  });
+}
+
+function moveTooltip(event){
+  tooltip.style.left=Math.min(event.clientX+16,window.innerWidth-210)+"px";
+  tooltip.style.top=Math.max(event.clientY-40,10)+"px";
+}
+
+draw();
+setTimeout(draw,100);
+window.addEventListener("resize",draw);
+</script>
+</body>
+</html>

@@ -12,9 +12,8 @@ body {
   margin: 0;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 78% 18%, rgba(65,182,196,.20), transparent 34%),
-    radial-gradient(circle at 18% 82%, rgba(123,201,164,.13), transparent 30%),
-    linear-gradient(135deg, #111518 0%, #1b2226 48%, #172d31 100%);
+    radial-gradient(circle at 75% 20%, rgba(93,172,129,.18), transparent 32%),
+    linear-gradient(135deg, #071814 0%, #0b241d 45%, #102f28 100%);
   color: #edf7ef;
 }
 
@@ -28,7 +27,7 @@ body {
 .kicker {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: .18em;
-  color: #56d6c9;
+  color: #94d3aa;
   font-size: 13px;
   margin-bottom: 18px;
   text-transform: uppercase;
@@ -51,8 +50,8 @@ p {
 }
 
 .card {
-  background: rgba(255,255,255,.075);
-  border: 1px solid rgba(123,211,196,.18);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(201,239,212,.16);
   box-shadow: 0 20px 55px rgba(0,0,0,.24);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -65,9 +64,9 @@ p {
   border-radius: 999px;
   margin-right: 8px;
   margin-bottom: 8px;
-  background: rgba(65,182,196,.14);
-  border: 1px solid rgba(100,216,203,.32);
-  color: #8de9df;
+  background: rgba(148,211,170,.13);
+  border: 1px solid rgba(148,211,170,.30);
+  color: #b9f6ca;
   font-size: 12px;
   letter-spacing: .12em;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -89,28 +88,28 @@ p {
   position: fixed;
   right: 54px;
   bottom: 42px;
-  color: #8de9df;
+  color: #b9f6ca;
   text-decoration: none;
-  border: 1px solid rgba(100,216,203,.40);
+  border: 1px solid rgba(185,246,202,.36);
   padding: 13px 20px;
   border-radius: 8px;
   font-size: 13px;
   letter-spacing: .12em;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: rgba(17,21,24,.72);
+  background: rgba(7,24,20,.58);
   z-index: 10;
 }
 
 .next-link:hover {
-  background: rgba(100,216,203,.12);
+  background: rgba(185,246,202,.10);
 }
 
 .image-frame {
   overflow: hidden;
   border-radius: 20px;
-  border: 1px solid rgba(123,211,196,.18);
+  border: 1px solid rgba(201,239,212,.14);
   box-shadow: 0 22px 58px rgba(0,0,0,.28);
-  background: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.06);
 }
 
 .image-frame img {
@@ -143,7 +142,7 @@ p {
   right: 8%;
   top: 44px;
   height: 3px;
-  background: linear-gradient(90deg, #9bd36d, #41b6c4, #2f80ed);
+  background: linear-gradient(90deg, #9bd36d, #41b6c4);
   opacity: .85;
 }
 
@@ -159,8 +158,8 @@ p {
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: #56d6c9;
-  box-shadow: 0 0 0 8px rgba(100,216,203,.14);
+  background: #b9f6ca;
+  box-shadow: 0 0 0 8px rgba(185,246,202,.12);
 }
 
 .year {
@@ -217,8 +216,8 @@ p {
 
 .perspective {
   padding: 22px 24px;
-  background: rgba(65,182,196,.13);
-  border: 1px solid rgba(100,216,203,.26);
+  background: rgba(185,246,202,.13);
+  border: 1px solid rgba(185,246,202,.24);
   border-radius: 16px;
   font-size: 26px;
   font-weight: 800;
@@ -285,63 +284,17 @@ body.title-page {
 .main-map {
   grid-row: 1 / span 2;
   grid-column: 2;
-  aspect-ratio: 1 / 1;
-  width: min(100%, 72vh);
-  height: min(72vh, 100%);
-  max-height: 72vh;
-  align-self: center;
-  justify-self: center;
-  display: block;
-  cursor: grab;
-  overflow: auto;
-  scroll-behavior: smooth;
-}
-
-.main-map:active {
-  cursor: grabbing;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-map img {
-  height: 100%;
-  width: auto;
-  min-width: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
   object-fit: contain;
   background: rgba(255,255,255,.95);
-  transform-origin: center center;
-  transition: transform .08s ease-out;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-.main-map::-webkit-scrollbar {
-  height: 9px;
-  width: 9px;
-}
-
-.main-map::-webkit-scrollbar-track {
-  background: rgba(255,255,255,.10);
-  border-radius: 999px;
-}
-
-.main-map::-webkit-scrollbar-thumb {
-  background: rgba(100,216,203,.45);
-  border-radius: 999px;
-}
-
-.zoom-hint {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  padding: 8px 11px;
-  background: rgba(17,21,24,.74);
-  border: 1px solid rgba(100,216,203,.28);
-  border-radius: 999px;
-  color: rgba(237,247,239,.80);
-  font-size: 11px;
-  letter-spacing: .08em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  z-index: 3;
-  pointer-events: none;
 }
 
 .context-map {
@@ -360,8 +313,8 @@ body.title-page {
   bottom: 18px;
   right: 22px;
   padding: 14px 16px;
-  background: rgba(17,21,24,.74);
-  border: 1px solid rgba(100,216,203,.24);
+  background: rgba(7,24,20,.68);
+  border: 1px solid rgba(185,246,202,.18);
   border-radius: 12px;
   color: rgba(237,247,239,.82);
   font-size: 13px;
@@ -382,9 +335,9 @@ body.title-page {
         <h1> Roosevelt Boulevard Subway Proposal: Evaluation & Visualization</h1>
         <p>Evaluating the proposed subway option through sustainability, economic development, and public health</p>
         <div style="margin-top:32px;">
-          <span class="badge">Qianmu Zheng</span>
-          <span class="badge">Sam Sen</span>
-          <span class="badge">Xiao Yu</span>
+          <span class="badge">Economic Development</span>
+          <span class="badge">Sustainability</span>
+          <span class="badge">Public Health</span>
         </div>
       </div>
 
@@ -395,64 +348,17 @@ body.title-page {
         <div class="image-frame photo">
           <img class="cover-img" src="images/community_photo.png" alt="Roosevelt Boulevard community context">
         </div>
-        <div class="image-frame main-map" id="routeViewer">
-          <img id="routeImage" src="images/roosevelt_subway_map.png" alt="Proposed Roosevelt Boulevard subway alignment">
+        <div class="image-frame main-map">
+          <img src="images/roosevelt_subway_map.png" alt="Proposed Roosevelt Boulevard subway alignment">
+          <div class="overlay-caption">
+            The subway option is one long-term transit alternative for transforming Roosevelt Boulevard into a safer and more connected corridor.
           </div>
         </div>
       </div>
     </div>
 
     <div class="footer-note">00 / 05 · Project Introduction</div>
-    <a class="next-link" href="00_2_total_introduction.html">NEXT →</a>
+    <a class="next-link" href="00_introduction.html">NEXT →</a>
   </section>
-
-<script>
-const viewer = document.getElementById("routeViewer");
-const img = document.getElementById("routeImage");
-
-let isDragging = false;
-let startX = 0;
-let startY = 0;
-let scrollLeft = 0;
-let scrollTop = 0;
-
-function centerRouteImage() {
-  viewer.scrollLeft = Math.max(0, (img.scrollWidth - viewer.clientWidth) / 2);
-  viewer.scrollTop = Math.max(0, (img.scrollHeight - viewer.clientHeight) / 2);
-}
-
-img.addEventListener("load", centerRouteImage);
-window.addEventListener("resize", centerRouteImage);
-
-viewer.addEventListener("wheel", (e) => {
-  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-    e.preventDefault();
-    viewer.scrollLeft += e.deltaY;
-  }
-}, { passive: false });
-
-viewer.addEventListener("mousedown", (e) => {
-  isDragging = true;
-  startX = e.pageX - viewer.offsetLeft;
-  startY = e.pageY - viewer.offsetTop;
-  scrollLeft = viewer.scrollLeft;
-  scrollTop = viewer.scrollTop;
-});
-
-window.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-  e.preventDefault();
-  const x = e.pageX - viewer.offsetLeft;
-  const y = e.pageY - viewer.offsetTop;
-  viewer.scrollLeft = scrollLeft - (x - startX);
-  viewer.scrollTop = scrollTop - (y - startY);
-});
-
-window.addEventListener("mouseup", () => {
-  isDragging = false;
-});
-
-viewer.addEventListener("dblclick", centerRouteImage);
-</script>
 </body>
 </html>

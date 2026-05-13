@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roosevelt Boulevard Subway — Public Health Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inconsolata:wght@300;400;500&family=Lato:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Lato',sans-serif;font-weight:300;background:#0b0f14;color:#e8e2d8;height:100vh;width:100vw;overflow:hidden;}
+:root{
+  --bg:#0b0f14;--mid:#111820;--card:#161e28;
+  --red:#e05a3a;--blu:#4a9ebb;--grn:#5aad8f;--tea:#3dbdaa;--pin:#c2556e;
+  --text:#e8e2d8;--muted:#7a8898;--rule:#1f2d3d;
+}
+
+/* ── DECK ── */
+#deck{width:100%;height:100%;position:relative;}
+.slide{position:absolute;top:0;left:0;right:0;bottom:48px;opacity:0;pointer-events:none;transition:opacity .3s ease;display:flex;flex-direction:column;}
+.slide.active{opacity:1;pointer-events:all;}
+
+/* ── NAV BAR ── */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;height:48px;
+  background:#0d1420;border-top:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;z-index:9999;
+}
+.nav-label{font-family:'Inconsolata',monospace;font-size:0.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);min-width:200px;}
+.nav-center{display:flex;align-items:center;gap:12px;}
+.nav-btn{
+  background:none;border:1px solid var(--rule);color:var(--muted);
+  width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.nav-btn:hover{background:var(--card);color:var(--text);border-color:var(--blu);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+#counter{font-family:'Inconsolata',monospace;font-size:0.72rem;color:var(--muted);min-width:52px;text-align:center;}
+.nav-hint{font-size:0.65rem;color:var(--rule);min-width:200px;text-align:right;font-family:'Inconsolata',monospace;}
+
+/* ── PROGRESS BAR ── */
+#progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--red),var(--blu));transition:width .3s ease;z-index:9999;}
+
+/* ══════════════════════════════
+   SLIDE 0 — COVER
+══════════════════════════════ */
+#s0{background:var(--bg);justify-content:center;padding:0 8vw;}
+.cover-inner{position:relative;z-index:1;width:100%;}
+.eyebrow{font-family:'Inconsolata',monospace;font-size:0.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--red);margin-bottom:2rem;display:flex;align-items:center;gap:.8rem;}
+.eyebrow::before{content:'';display:inline-block;width:2rem;height:1px;background:var(--red);}
+.cover-h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,7vw,6rem);line-height:1.05;font-weight:400;margin-bottom:.5rem;}
+.cover-h1 em{font-style:italic;color:var(--blu);}
+.cover-sub{font-family:'Playfair Display',serif;font-size:clamp(1rem,2.2vw,1.7rem);font-style:italic;color:var(--muted);margin-bottom:3rem;}
+.cover-team{font-family:'Inconsolata',monospace;font-size:.75rem;color:var(--muted);line-height:2;}
+.cover-team strong{color:var(--text);font-weight:400;}
+.cover-stats{margin-top:4rem;display:flex;gap:3.5rem;flex-wrap:wrap;}
+.cstat{border-left:1px solid var(--rule);padding-left:1.2rem;}
+.cstat-n{font-family:'Playfair Display',serif;font-size:2.2rem;line-height:1;margin-bottom:.3rem;}
+.cstat-l{font-family:'Inconsolata',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.cover-deco{position:absolute;right:-1vw;bottom:-6vh;font-family:'Playfair Display',serif;font-size:40vw;line-height:1;color:rgba(255,255,255,0.012);pointer-events:none;user-select:none;z-index:0;}
+
+/* ══════════════════════════════
+   SLIDE 1 — INTRO / METHOD
+══════════════════════════════ */
+#s1{background:#ddeef6;display:grid;grid-template-columns:420px 1fr;overflow:hidden;}
+.intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:5vw;align-items:start;height:calc(100vh - 96px);overflow:hidden;}
+.intro-left{display:flex;flex-direction:column;gap:1.5rem;justify-content:center;}
+.intro-right{display:flex;flex-direction:column;gap:1.2rem;justify-content:center;}
+
+.slide-tag{font-family:'Inconsolata',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
+.slide-h2{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,2.8vw,2.4rem);font-weight:400;line-height:1.2;margin-bottom:1rem;}
+.slide-body{font-size:.88rem;color:var(--muted);line-height:1.8;}
+.slide-body strong{color:var(--text);font-weight:400;}
+
+.method-card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:1.1rem 1.3rem;}
+.method-card .mc-label{font-family:'Inconsolata',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
+.method-card .mc-title{font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:.4rem;}
+.method-card .mc-desc{font-size:.78rem;color:var(--muted);line-height:1.65;}
+.method-card .mc-formula{font-family:'Inconsolata',monospace;font-size:.72rem;color:var(--tea);margin-top:.5rem;padding:.4rem .6rem;background:rgba(61,189,170,.08);border-radius:3px;}
+
+.logic-flow{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;}
+.lf-step{font-family:'Inconsolata',monospace;font-size:.65rem;padding:.3rem .7rem;border:1px solid var(--rule);border-radius:3px;color:var(--text);background:var(--card);}
+.lf-arrow{color:var(--muted);font-size:.8rem;}
+.lf-step.final{border-color:var(--tea);color:var(--tea);}
+
+/* ══════════════════════════════
+   SLIDES 2-4 — INDICATOR + MAP
+══════════════════════════════ */
+.ind-slide{background:var(--bg);display:grid;grid-template-columns:300px 1fr;align-items:stretch;height:calc(100vh - 48px);}
+.ind-panel{display:flex;flex-direction:column;justify-content:center;gap:1.3rem;padding:5vh 2.5rem 5vh 5vw;border-right:1px solid var(--rule);position:relative;z-index:1;}
+.ind-panel::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;}
+.ind-num{font-family:'Inconsolata',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+.ind-tag{display:inline-block;font-family:'Inconsolata',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:.22rem .65rem;border-radius:2px;font-weight:500;width:fit-content;}
+.ind-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,2.2vw,2rem);font-weight:400;line-height:1.2;}
+.ind-desc{font-size:.84rem;color:var(--muted);line-height:1.75;}
+.ind-source{font-family:'Inconsolata',monospace;font-size:.62rem;color:var(--muted);padding:.3rem .6rem;border:1px solid var(--rule);border-radius:3px;display:inline-block;}
+.ind-find{border-left:2px solid;padding-left:.9rem;font-family:'Inconsolata',monospace;font-size:.75rem;line-height:1.65;}
+.ind-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.2rem;font-family:'Inconsolata',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:1px solid;transition:background .2s,color .2s;width:fit-content;}
+
+.ind-frame{position:relative;background:var(--card);z-index:1;}
+.ind-frame iframe{width:100%;height:100%;border:none;display:block;}
+.fcover{position:absolute;inset:0;background:rgba(11,15,20,.6);display:flex;align-items:center;justify-content:center;z-index:10;transition:opacity .35s;cursor:pointer;}
+.fcover.gone{opacity:0;pointer-events:none;}
+.lbtn{font-family:'Inconsolata',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text);border:1px solid var(--muted);padding:.75rem 1.8rem;background:transparent;cursor:pointer;transition:border-color .2s;}
+.lbtn:hover{border-color:var(--text);}
+
+/* accent per indicator */
+[data-a="blu"] .ind-panel::before,[data-a="blu"] .ind-find{border-color:var(--blu);}
+[data-a="blu"] .ind-find,[data-a="blu"] .ind-btn{color:var(--blu);}
+[data-a="blu"] .ind-tag{background:rgba(74,158,187,.15);color:var(--blu);}
+[data-a="blu"] .ind-btn{border-color:var(--blu);}
+[data-a="blu"] .ind-btn:hover{background:var(--blu);color:var(--bg);}
+
+[data-a="red"] .ind-panel::before,[data-a="red"] .ind-find{border-color:var(--red);}
+[data-a="red"] .ind-find,[data-a="red"] .ind-btn{color:var(--red);}
+[data-a="red"] .ind-tag{background:rgba(224,90,58,.15);color:var(--red);}
+[data-a="red"] .ind-btn{border-color:var(--red);}
+[data-a="red"] .ind-btn:hover{background:var(--red);color:var(--bg);}
+
+[data-a="pin"] .ind-panel::before,[data-a="pin"] .ind-find{border-color:var(--pin);}
+[data-a="pin"] .ind-find,[data-a="pin"] .ind-btn{color:var(--pin);}
+[data-a="pin"] .ind-tag{background:rgba(194,85,110,.15);color:var(--pin);}
+[data-a="pin"] .ind-btn{border-color:var(--pin);}
+[data-a="pin"] .ind-btn:hover{background:var(--pin);color:var(--bg);}
+
+/* ══════════════════════════════
+   SLIDE 5 — COMPOSITE MAP
+══════════════════════════════ */
+#s5{background:#0b0f14;padding:0;margin:0;}
+[data-a="tea"] .ind-panel::before,[data-a="tea"] .ind-find{border-color:var(--tea);}
+[data-a="tea"] .ind-find,[data-a="tea"] .ind-btn{color:var(--tea);}
+[data-a="tea"] .ind-tag{background:rgba(61,189,170,.15);color:var(--tea);}
+[data-a="tea"] .ind-btn{border-color:var(--tea);}
+[data-a="tea"] .ind-btn:hover{background:var(--tea);color:var(--bg);}
+
+@media(max-width:768px){
+  .ind-slide,.intro-grid{grid-template-columns:1fr;}
+  .ind-panel{border-right:none;border-bottom:1px solid var(--rule);padding:3vh 5vw;}
+  .ind-frame{min-height:50vh;}
+  #s0{padding:0 6vw;}
+}
+
+    /* ══ NEW INTRO STYLES ══ */
+    .intro-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .intro-left {
+      padding: 5vh 3vw 4vh 5vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.4rem;
+      border-right: 1px solid var(--rule);
+    }
+
+    .intro-tag {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--tea);
+    }
+
+    .intro-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      font-weight: 400;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .intro-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .intro-quote {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.78rem;
+      line-height: 1.65;
+      color: var(--tea);
+      border-left: 2px solid var(--tea);
+      padding-left: 0.9rem;
+    }
+
+    .intro-logic {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .il-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.9rem;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      padding: 0.7rem 0.9rem;
+    }
+
+    .il-num {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--tea);
+      background: rgba(61,189,170,0.1);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .il-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .il-desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .intro-right {
+      padding: 4vh 4vw 4vh 3vw;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .intro-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .istat {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.9rem 1rem;
+    }
+
+    .istat-n {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .istat-l {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .intro-maps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .im-title {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .im-link {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .im-link:hover {
+      border-color: var(--tea);
+      background: rgba(61,189,170,0.05);
+    }
+
+    .im-num {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      width: 1.5rem;
+    }
+
+    .im-name {
+      font-size: 0.82rem;
+      color: var(--text);
+      margin-bottom: 0.1rem;
+    }
+
+    .im-sub {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.62rem;
+      color: var(--muted);
+    }
+
+    .im-arrow {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+
+    .im-link:hover .im-arrow { color: var(--tea); }
+  
+    .method-block { display: flex; flex-direction: column; gap: 0.6rem; }
+    .mb-title { font-family: 'Inconsolata', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .mb-item { display: flex; gap: 0.9rem; background: var(--card); border: 1px solid var(--rule); border-radius: 5px; padding: 0.7rem 0.9rem; }
+    .mb-label { font-family: 'Inconsolata', monospace; font-size: 0.58rem; color: var(--tea); text-transform: uppercase; letter-spacing: 0.1em; flex-shrink: 0; width: 5rem; padding-top: 2px; }
+    .mb-name { font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+    .mb-desc { font-size: 0.73rem; color: var(--muted); line-height: 1.55; }
+  
+    /* ══ NEW INTRO STYLES ══ */
+    .intro-wrap {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    /* Blue left panel */
+    .intro-left-blue {
+      background: linear-gradient(160deg, #1a3a5c 0%, #1a5c8a 50%, #1a8a78 100%);
+      padding: 5vh 3vw 4vh 4vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .intro-left-blue::before {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      top: -100px; right: -100px;
+    }
+
+    .intro-left-blue::after {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      bottom: -80px; left: -80px;
+    }
+
+    .ib-eyebrow {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      position: relative; z-index: 1;
+    }
+
+    .ib-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+      font-weight: 400;
+      line-height: 1.25;
+      color: #ffffff;
+      position: relative; z-index: 1;
+    }
+
+    .ib-desc {
+      font-size: 0.86rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.75;
+      position: relative; z-index: 1;
+    }
+
+    .ib-quote {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.9);
+      border-left: 2px solid rgba(255,255,255,0.4);
+      padding-left: 1rem;
+      line-height: 1.6;
+      position: relative; z-index: 1;
+    }
+
+    .ib-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      position: relative; z-index: 1;
+    }
+
+    .ib-stat {
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 0.7rem 0.9rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .ib-stat-n {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      line-height: 1;
+      color: #ffffff;
+      margin-bottom: 0.2rem;
+    }
+
+    .ib-stat-l {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* White right panel */
+    .intro-right-white {
+      background: #ffffff;
+      padding: 4vh 4vw;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .irw-section { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .irw-title {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #aaaaaa;
+      margin-bottom: 0.2rem;
+    }
+
+    .irw-method-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .irw-method-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      background: #f8f8f8;
+      border: 1px solid #eeeeee;
+      border-radius: 5px;
+      padding: 0.7rem 0.8rem;
+    }
+
+    .irw-method-icon {
+      font-size: 1rem;
+      color: #1a8a78;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .irw-method-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 0.2rem;
+    }
+
+    .irw-method-desc {
+      font-size: 0.7rem;
+      color: #888888;
+      line-height: 1.5;
+      font-family: 'Inconsolata', monospace;
+    }
+
+    .irw-divider { border-top: 1px solid #eeeeee; }
+
+    .irw-links { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .irw-link {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.6rem 0.8rem;
+      background: #f8f8f8;
+      border: 1px solid #eeeeee;
+      border-radius: 5px;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .irw-link:hover { background: #f0f7ff; border-color: #2c6e9e; }
+
+    .irw-link-num {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .irw-link-name {
+      font-size: 0.82rem;
+      color: #1a1a2e;
+      margin-bottom: 0.1rem;
+    }
+
+    .irw-link-sub {
+      font-family: 'Inconsolata', monospace;
+      font-size: 0.6rem;
+      color: #888888;
+    }
+
+    .irw-link-arrow {
+      margin-left: auto;
+      color: #cccccc;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+
+    .irw-link:hover .irw-link-arrow { color: #2c6e9e; }
+  
+    /* ══ BLUE INTRO STYLES ══ */
+    #s1 { background: #f0f4f8; }
+    /* intro-wrap handled by #s1 */
+
+    .intro-left-blue {
+      background: #ddeef6;
+      height: 100%;
+      padding: 5vh 3vw 4vh 4vw;
+      display: flex; flex-direction: column; justify-content: center; gap: 1.4rem;
+      position: relative; overflow: hidden;
+    }
+
+    .ib-eyebrow { font-family:'Inconsolata',monospace; font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:#5a8aaa; position:relative; z-index:1; }
+    .ib-title { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,2.2vw,2rem); font-weight:400; line-height:1.25; color:#1a2a3a; position:relative; z-index:1; }
+    .ib-desc { font-size:0.84rem; color:#4a6a80; line-height:1.75; position:relative; z-index:1; }
+    .ib-quote { font-family:'Playfair Display',serif; font-style:italic; font-size:0.9rem; color:#2a5a7a; border-left:2px solid #7ab0cc; padding-left:0.9rem; line-height:1.6; position:relative; z-index:1; }
+
+    .ib-steps { display:flex; flex-direction:column; gap:0.65rem; position:relative; z-index:1; }
+    .ib-step { display:flex; align-items:flex-start; gap:0.8rem; }
+    .ib-step-n { font-family:'Inconsolata',monospace; font-size:0.7rem; font-weight:500; color:#2a6a90; background:rgba(42,106,144,0.12); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+    .ib-step-t { font-size:0.82rem; font-weight:600; color:#1a2a3a; margin-bottom:0.15rem; }
+    .ib-step-d { font-size:0.73rem; color:#5a7a90; line-height:1.5; }
+
+    .intro-right-white { background:#ffffff; padding:4vh 4vw; display:flex; flex-direction:column; gap:1.2rem; justify-content:center; overflow:hidden; height:100%; }
+
+    .irw-section { display:flex; flex-direction:column; gap:0.6rem; }
+    .irw-title { font-family:'Inconsolata',monospace; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:#aaaaaa; margin-bottom:0.1rem; }
+
+    .irw-method-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.55rem; }
+    .irw-method-item { display:flex; align-items:flex-start; gap:0.65rem; background:#f8f9fa; border:1px solid #eeeeee; border-radius:5px; padding:0.65rem 0.8rem; }
+    .irw-method-icon { font-size:1rem; color:#1a8a78; flex-shrink:0; margin-top:1px; }
+    .irw-method-name { font-size:0.78rem; font-weight:600; color:#1a1a2e; margin-bottom:0.15rem; }
+    .irw-method-desc { font-size:0.68rem; color:#888888; line-height:1.5; font-family:'Inconsolata',monospace; }
+
+    .irw-divider { border-top:1px solid #eeeeee; }
+
+    .irw-links { display:flex; flex-direction:column; gap:0.4rem; }
+    .irw-link { display:flex; align-items:center; gap:0.8rem; padding:0.55rem 0.8rem; background:#f8f9fa; border:1px solid #eeeeee; border-radius:5px; text-decoration:none; transition:border-color 0.2s,background 0.2s; }
+    .irw-link:hover { background:#eef4fb; border-color:#2c6e9e; }
+    .irw-link-num { font-family:'Inconsolata',monospace; font-size:0.62rem; font-weight:500; padding:0.18rem 0.5rem; border-radius:3px; flex-shrink:0; }
+    .irw-link-name { font-size:0.8rem; color:#1a1a2e; margin-bottom:0.1rem; }
+    .irw-link-sub { font-family:'Inconsolata',monospace; font-size:0.6rem; color:#888888; }
+    .irw-link-arrow { margin-left:auto; color:#cccccc; font-size:0.9rem; flex-shrink:0; transition:color 0.2s; }
+    .irw-link:hover .irw-link-arrow { color:#2c6e9e; }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="deck">
+
+<!-- ══ SLIDE 1: INTRO ══ -->
+<div class="slide active" id="s1" data-label="Public Health Assessment">
+
+    <!-- LEFT: blue gradient panel -->
+    <div class="intro-left-blue">
+      <div class="ib-eyebrow">Public Health Assessment · Roosevelt Boulevard Subway</div>
+      <h2 class="ib-title">Public Health Equity Along the Roosevelt Boulevard Corridor</h2>
+      <p class="ib-desc">Comparing existing conditions across 12 proposed station areas to identify where the subway would deliver the greatest public health benefit.</p>
+      <div class="ib-quote">Where is the need greatest, and who would this actually help?</div>
+      <div class="ib-steps">
+        <div class="ib-step"><span class="ib-step-n">1</span><div><div class="ib-step-t">Social Vulnerability</div><div class="ib-step-d">CDC SVI identifies communities with fewest resources to cope with hazards.</div></div></div>
+        <div class="ib-step"><span class="ib-step-n">2</span><div><div class="ib-step-t">Traffic Safety</div><div class="ib-step-d">Subway reduces car dependency, yielding direct safety co-benefits.</div></div></div>
+        <div class="ib-step"><span class="ib-step-n">3</span><div><div class="ib-step-t">Healthcare Access</div><div class="ib-step-d">Distance to nearest hospital, clinic, or pharmacy from each station.</div></div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: white panel -->
+    <div class="intro-right-white">
+      <div class="irw-section">
+        <div class="irw-title">Methodology</div>
+        <div class="irw-method-grid">
+          <div class="irw-method-item">
+            <div class="irw-method-icon">⬡</div>
+            <div><div class="irw-method-name">Walkshed</div><div class="irw-method-desc">10-min OSMnx network isochrones — not radius buffers</div></div>
+          </div>
+          <div class="irw-method-item">
+            <div class="irw-method-icon" style="color:#2c6e9e">①</div>
+            <div><div class="irw-method-name">Social Vulnerability Index</div><div class="irw-method-desc">CDC SVI 2022 · Spatial join at census tract level</div></div>
+          </div>
+          <div class="irw-method-item">
+            <div class="irw-method-icon" style="color:#c0392b">②</div>
+            <div><div class="irw-method-name">Serious & Fatal Crashes</div><div class="irw-method-desc">PennDOT 2024 · Point-in-polygon count</div></div>
+          </div>
+          <div class="irw-method-item">
+            <div class="irw-method-icon" style="color:#a03050">③</div>
+            <div><div class="irw-method-name">Distance to Nearest HC</div><div class="irw-method-desc">OSM hospitals, clinics, pharmacies · Haversine distance</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="irw-divider"></div>
+      <div class="irw-section">
+        <div class="irw-title">Open map pages</div>
+        <div class="irw-links">
+          <a class="irw-link" href="html/1_svi_map.html" target="_blank">
+            <span class="irw-link-num" style="background:rgba(44,110,158,0.1);color:#2c6e9e">01</span>
+            <div><div class="irw-link-name">Social Vulnerability Index</div><div class="irw-link-sub">CDC SVI 2022</div></div>
+            <span class="irw-link-arrow">→</span>
+          </a>
+          <a class="irw-link" href="html/2_crash_map.html" target="_blank">
+            <span class="irw-link-num" style="background:rgba(192,57,43,0.1);color:#c0392b">02</span>
+            <div><div class="irw-link-name">Crash Hotspot Analysis</div><div class="irw-link-sub">PennDOT 2024</div></div>
+            <span class="irw-link-arrow">→</span>
+          </a>
+          <a class="irw-link" href="html/7_healthcare_map.html" target="_blank">
+            <span class="irw-link-num" style="background:rgba(160,48,80,0.1);color:#a03050">03</span>
+            <div><div class="irw-link-name">Healthcare Access</div><div class="irw-link-sub">OSM · Distance to nearest facility</div></div>
+            <span class="irw-link-arrow">→</span>
+          </a>
+          <a class="irw-link" href="html/bubble_chart.html" target="_blank">
+            <span class="irw-link-num" style="background:rgba(26,138,120,0.1);color:#1a8a78">04</span>
+            <div><div class="irw-link-name">Station Profile Chart</div><div class="irw-link-sub">3 indicators · Bubble chart</div></div>
+            <span class="irw-link-arrow">→</span>
+          </a>
+        </div>
+      </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 2: SVI ══ -->
+<div class="slide ind-slide" id="s2" data-a="blu" data-label="Indicator 1 — Social Vulnerability">
+  <div class="ind-panel">
+    <div class="ind-num">Indicator 01 / 03</div>
+    <span class="ind-tag">Map · CDC SVI 2022</span>
+    <div class="ind-title">Social Vulnerability Index</div>
+    <div class="ind-desc">CDC SVI scores by census tract within each walkshed. Higher values indicate greater social vulnerability — communities with fewer resources to cope with external stressors.</div>
+    <div class="ind-source">Data: CDC/ATSDR SVI 2022 · Pennsylvania Census Tracts</div>
+    <div class="ind-find">10 of 12 stations serve communities with SVI &gt; 0.75. Broad-Erie (0.975) and North 9th (0.953) rank highest. Broad-Erie (43.9%) and North 9th (37.3%) also have the highest car-free household rates — entirely transit-dependent.</div>
+    <a class="ind-btn" href="html/1_svi_map.html" target="_blank">Open full map →</a>
+  </div>
+  <div class="ind-frame">
+    <div class="fcover" onclick="loadFrame(this,'html/1_svi_map.html')">
+      <button class="lbtn">Load Interactive Map</button>
+    </div>
+    <iframe title="SVI Map"></iframe>
+  </div>
+</div>
+
+<!-- ══ SLIDE 3: CRASH ══ -->
+<div class="slide ind-slide" id="s3" data-a="red" data-label="Indicator 2 — Traffic Safety">
+  <div class="ind-panel">
+    <div class="ind-num">Indicator 02 / 03</div>
+    <span class="ind-tag">Map · PennDOT 2024</span>
+    <div class="ind-title">Crash Hotspot Analysis</div>
+    <div class="ind-desc">Serious and fatal crashes (severity ≤2) within each station's 10-minute walkshed. Reduced car dependency from subway use could yield significant traffic safety co-benefits.</div>
+    <div class="ind-source">Data: PennDOT Crash Reportable Data 2024 · Philadelphia County</div>
+    <div class="ind-find">Bustleton records 18 crashes — nearly 3× the corridor mean of 6.2. Cottman (12) and Rising Sun (9) also well above average.</div>
+    <a class="ind-btn" href="html/2_crash_map.html" target="_blank">Open full map →</a>
+  </div>
+  <div class="ind-frame">
+    <div class="fcover" onclick="loadFrame(this,'html/2_crash_map.html')">
+      <button class="lbtn">Load Interactive Map</button>
+    </div>
+    <iframe title="Crash Map"></iframe>
+  </div>
+</div>
+
+<!-- ══ SLIDE 4: HEALTHCARE ══ -->
+<div class="slide ind-slide" id="s4" data-a="pin" data-label="Indicator 3 — Healthcare Access">
+  <div class="ind-panel">
+    <div class="ind-num">Indicator 03 / 03</div>
+    <span class="ind-tag">Map · OSM Healthcare</span>
+    <div class="ind-title">Healthcare Access</div>
+    <div class="ind-desc">Straight-line distance from each proposed station to the nearest hospital, clinic, or pharmacy. Greater distance means residents must travel further to reach medical care.</div>
+    <div class="ind-source">Data: OpenStreetMap Healthcare Facilities · Haversine Distance</div>
+    <div class="ind-find">Southampton (2.42 km) and Red Lion (1.80 km) are farthest from any healthcare facility. The subway would dramatically cut travel time to medical resources for these communities.</div>
+    <a class="ind-btn" href="html/7_healthcare_map.html" target="_blank">Open full map →</a>
+  </div>
+  <div class="ind-frame">
+    <div class="fcover" onclick="loadFrame(this,'html/7_healthcare_map.html')">
+      <button class="lbtn">Load Interactive Map</button>
+    </div>
+    <iframe title="Healthcare Map"></iframe>
+  </div>
+</div>
+
+<!-- ══ SLIDE 5: PARALLEL COORDS ══ -->
+<div class="slide" id="s5" data-label="Station Profile — Three Indicators">
+  <iframe src="html/bubble_chart.html" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"></iframe>
+</div>
+
+<div class="slide" id="s6" data-label="Thank You" style="display:flex;align-items:center;justify-content:center;background:var(--bg);">
+  <div style="text-align:center;">
+    <div style="font-family:'Inconsolata',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Roosevelt Boulevard Subway · Public Health Analysis</div>
+    <div style="font-family:'Playfair Display',serif;font-size:clamp(2.4rem,5vw,4rem);font-weight:400;color:var(--text);line-height:1.2;">Thank you for<br><em>listening.</em></div>
+    <div style="width:40px;height:1px;background:var(--red);margin:2rem auto;"></div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ══ NAV ══ -->
+<div id="nav">
+  <div class="nav-label" id="nav-label"></div>
+  <div class="nav-center">
+    <button class="nav-btn" id="btn-prev" onclick="go(-1)">&#8592;</button>
+    <span id="counter"></span>
+    <button class="nav-btn" id="btn-next" onclick="go(1)">&#8594;</button>
+  </div>
+  <div class="nav-hint">&#8592; &#8594; to navigate &nbsp;·&nbsp; F for fullscreen</div>
+</div>
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'));
+let cur = 0;
+
+function go(dir) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(slides.length - 1, cur + dir));
+  slides[cur].classList.add('active');
+  update();
+  // Trigger resize in any iframes on the current slide
+  const iframes = slides[cur].querySelectorAll('iframe');
+  iframes.forEach(f => {
+    setTimeout(() => {
+      try { f.contentWindow.dispatchEvent(new Event('resize')); } catch(e) {}
+    }, 50);
+    setTimeout(() => {
+      try { f.contentWindow.dispatchEvent(new Event('resize')); } catch(e) {}
+    }, 300);
+  });
+}
+
+function update() {
+  document.getElementById('progress').style.width = ((cur + 1) / slides.length * 100).toFixed(1) + '%';
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + slides.length;
+  document.getElementById('nav-label').textContent = slides[cur].dataset.label || '';
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === slides.length - 1;
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight','ArrowDown',' '].includes(e.key)) { e.preventDefault(); go(1); }
+  if (['ArrowLeft','ArrowUp'].includes(e.key))         { e.preventDefault(); go(-1); }
+  if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+function loadFrame(overlay, src) {
+  const iframe = overlay.parentElement.querySelector('iframe');
+  iframe.src = src;
+  overlay.classList.add('gone');
+}
+
+update();
+</script>
+</body>
+</html>

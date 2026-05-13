@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Roosevelt Boulevard Subway Sustainability Viewer</title>
+<style>
+:root {
+  --deep:#09251d;
+  --deep2:#12392d;
+  --green:#1b5e20;
+  --green2:#2e7d32;
+  --mint:#dff3e6;
+  --pale:#f4fbf6;
+  --card:rgba(255,255,255,0.88);
+  --text:#1f2a24;
+  --muted:#6f7f75;
+  --line:rgba(27,94,32,0.14);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  min-height:100vh;
+  font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 80% 10%, rgba(185,246,202,0.45), transparent 28%),
+    radial-gradient(circle at 8% 88%, rgba(129,199,132,0.34), transparent 26%),
+    linear-gradient(135deg, #eef7f0 0%, #f8fcf9 46%, #e5f3e9 100%);
+  overflow-x:hidden;
+}
+.page {
+  min-height:100vh;
+  display:grid;
+  grid-template-columns: 340px 1fr;
+}
+.sidebar {
+  background:linear-gradient(180deg, var(--deep) 0%, var(--deep2) 100%);
+  color:white;
+  padding:7vh 38px 36px 42px;
+  box-shadow:14px 0 36px rgba(0,0,0,0.15);
+}
+.page-no {
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  color:rgba(214,244,222,0.62);
+  letter-spacing:.18em;
+  font-size:12px;
+  margin-bottom:28px;
+}
+.badge {
+  display:inline-block;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size:11px;
+  letter-spacing:.18em;
+  color:#b9f6ca;
+  border:1px solid rgba(185,246,202,.25);
+  background:rgba(76,175,80,.16);
+  padding:6px 12px;
+  border-radius:3px;
+  margin-bottom:36px;
+}
+h1 {
+  font-family:Georgia, "Times New Roman", serif;
+  font-size:43px;
+  line-height:1.1;
+  font-weight:500;
+  margin:0 0 26px 0;
+}
+.sidebar p {
+  color:rgba(235,255,240,.68);
+  line-height:1.72;
+  font-size:15px;
+}
+.quote {
+  border-left:2px solid #66bb6a;
+  padding-left:18px;
+  color:#b9f6ca;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size:13px;
+  line-height:1.65;
+  margin:28px 0;
+}
+.main {
+  padding:6vh 5vw;
+  position:relative;
+}
+.hero {
+  background:var(--card);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:34px 38px;
+  box-shadow:0 18px 48px rgba(20,80,40,.13);
+  max-width:1040px;
+}
+.kicker {
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--green2);
+  font-weight:800;
+  font-size:12px;
+  margin-bottom:12px;
+}
+h2 {
+  margin:0;
+  font-size:34px;
+  line-height:1.22;
+  color:#143b2c;
+}
+.lead {
+  margin:18px 0 0 0;
+  max-width:850px;
+  color:#52665a;
+  font-size:17px;
+  line-height:1.65;
+}
+.metric-grid {
+  display:grid;
+  grid-template-columns:repeat(4, minmax(160px, 1fr));
+  gap:16px;
+  margin-top:28px;
+}
+.metric {
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:20px 18px;
+  min-height:150px;
+  box-shadow:0 10px 28px rgba(20,80,40,.08);
+}
+.metric-value {
+  font-family:Georgia, "Times New Roman", serif;
+  font-size:35px;
+  color:var(--green);
+  line-height:1;
+  margin-bottom:12px;
+}
+.metric-title { font-weight:800; color:#26352e; margin-bottom:8px; }
+.metric-note { color:var(--muted); font-size:13px; line-height:1.45; }
+.section-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:22px;
+  max-width:1040px;
+  margin-top:24px;
+}
+.panel {
+  background:rgba(255,255,255,.78);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:26px;
+  box-shadow:0 12px 34px rgba(20,80,40,.09);
+}
+.panel h3 { margin:0 0 14px 0; color:#143b2c; font-size:20px; }
+.flow { display:grid; gap:12px; }
+.flow-item {
+  display:grid;
+  grid-template-columns:54px 1fr;
+  gap:14px;
+  align-items:center;
+  padding:13px 14px;
+  border-radius:14px;
+  background:#f8fcf9;
+  border:1px solid rgba(27,94,32,.10);
+}
+.num {
+  width:42px; height:42px; border-radius:50%;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg, #dff3e6, #8fd6b1);
+  color:#0f3b2b;
+  font-weight:900;
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.flow-title { font-weight:800; color:#26352e; margin-bottom:3px; }
+.flow-note { color:var(--muted); font-size:13px; line-height:1.42; }
+.maps { display:grid; gap:10px; }
+a.map-link {
+  text-decoration:none;
+  color:inherit;
+  display:grid;
+  grid-template-columns:46px 1fr auto;
+  gap:13px;
+  align-items:center;
+  padding:12px 14px;
+  border-radius:14px;
+  background:#f8fcf9;
+  border:1px solid rgba(27,94,32,.10);
+  transition:.18s ease;
+}
+a.map-link:hover { transform:translateY(-2px); box-shadow:0 10px 22px rgba(20,80,40,.10); }
+.map-index {
+  color:var(--green2);
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight:900;
+}
+.map-name { font-weight:800; color:#26352e; }
+.map-desc { color:var(--muted); font-size:13px; margin-top:2px; }
+.arrow { color:var(--green2); font-weight:900; }
+.footer-note {
+  max-width:1040px;
+  margin-top:18px;
+  color:#6f7f75;
+  font-size:13px;
+  line-height:1.55;
+}
+@media (max-width:1050px) {
+  .page { grid-template-columns:1fr; }
+  .sidebar { display:none; }
+  .main { padding:28px; }
+  .metric-grid { grid-template-columns:repeat(2,1fr); }
+  .section-grid { grid-template-columns:1fr; }
+}
+@media (max-width:600px) {
+  .metric-grid { grid-template-columns:1fr; }
+  h2 { font-size:27px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="page-no">00 / 05</div>
+    <div class="badge">INTRO</div>
+    <h1>Roosevelt Boulevard Subway Viewer: Sustainability</h1>
+    <p>A visual guide showing how proposed subway may improve green-space accessibility and equity.</p>
+    <div class="quote">Two questions: who is served, and how much access improves?</div>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <div class="kicker">Project Overview</div>
+      <h2>Evaluating the subway proposal through green access and equity.</h2>
+      <p class="lead">Comparing the existing bus-only condition with the proposed subway condition, then identifies priority tracts for future investment.</p>
+
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-value">52</div><div class="metric-title">Subway-served tracts</div><div class="metric-note">tracts intersect with a 10-minute walk of subway stations</div></div><div class="metric"><div class="metric-value">81,706</div><div class="metric-title">Population served by subway</div><div class="metric-note">residents gaining subway walking access</div></div><div class="metric"><div class="metric-value">20,772</div><div class="metric-title">Low-income population served</div><div class="metric-note">low-income residents within the subway service area</div></div><div class="metric"><div class="metric-value">0.86 km²</div><div class="metric-title">Accessible green space</div><div class="metric-note">green space reachable within the subway service area</div></div>
+      </div>
+    </section>
+
+    <section class="section-grid">
+      <div class="panel">
+        <h3>Website logic</h3>
+        <div class="flow">
+          <div class="flow-item"><div class="num">1</div><div><div class="flow-title">Bus-only baseline</div><div class="flow-note">Maps 1–2 show the current condition without the new subway.</div></div></div>
+          <div class="flow-item"><div class="num">2</div><div><div class="flow-title">Subway scenario</div><div class="flow-note">Maps 3–4 show green access, population served, and equity improvements after subway construction.</div></div></div>
+          <div class="flow-item"><div class="num">3</div><div><div class="flow-title">Investment priority</div><div class="flow-note">Identify where investment should be prioritized first.</div></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Open the map pages</h3>
+        <div class="maps">
+          <a class="map-link" href="01_bus_basemap.html"><div class="map-index">01</div><div><div class="map-name">Bus Base Map</div><div class="map-desc">Existing bus condition</div></div><div class="arrow">→</div></a><a class="map-link" href="02_bus_metrics.html"><div class="map-index">02</div><div><div class="map-name">Bus Service Metrics</div><div class="map-desc">Bus-only accessibility and equity metrics</div></div><div class="arrow">→</div></a><a class="map-link" href="03_subway_basemap.html"><div class="map-index">03</div><div><div class="map-name">Subway Base Map</div><div class="map-desc">Proposed subway condition</div></div><div class="arrow">→</div></a><a class="map-link" href="04_subway_metrics.html"><div class="map-index">04</div><div><div class="map-name">Subway Service Metrics</div><div class="map-desc">Subway accessibility and improvement metrics</div></div><div class="arrow">→</div></a><a class="map-link" href="05_priority_investment_map.html"><div class="map-index">05</div><div><div class="map-name">Priority Investment Map</div><div class="map-desc">Priority score for tracts and stations</div></div><div class="arrow">→</div></a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

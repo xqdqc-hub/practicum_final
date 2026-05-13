@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Roosevelt Blvd Subway — Economic Development</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#0d1117;color:#e6edf3;
+          display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+    #header{background:#161b22;border-bottom:1px solid #30363d;padding:13px 20px;flex-shrink:0;}
+    #header h1{font-size:15px;font-weight:600;letter-spacing:.3px;}
+    #header p{font-size:11px;color:#8b949e;margin-top:3px;}
+    #main{display:flex;flex:1;overflow:hidden;}
+    #sidebar{width:245px;background:#161b22;border-right:1px solid #30363d;
+              padding:16px;overflow-y:auto;flex-shrink:0;}
+    .sec-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;
+                color:#8b949e;font-weight:600;margin-bottom:10px;display:flex;
+                justify-content:space-between;align-items:center;}
+    .sec-label a{font-size:9px;color:#58a6ff;cursor:pointer;text-transform:none;letter-spacing:0;text-decoration:none;}
+    .type-row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;
+               cursor:pointer;transition:background .12s;margin-bottom:3px;}
+    .type-row:hover{background:#21262d;}
+    .tdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .type-row label{font-size:12px;cursor:pointer;line-height:1.35;flex:1;}
+    .type-row input{accent-color:#58a6ff;width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+    hr.div{border:none;border-top:1px solid #30363d;margin:14px 0;}
+    .stat-card{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+    .stat-label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.8px;}
+    .stat-value{font-size:20px;font-weight:700;margin-top:2px;}
+    #map-wrap{flex:1;position:relative;}
+    #map{width:100%;height:100%;}
+    .leaflet-container{background:#0d1117;}
+    #popup{position:absolute;bottom:24px;left:24px;width:280px;background:#161b22;
+            border:1px solid #30363d;border-radius:10px;padding:16px;
+            box-shadow:0 8px 32px rgba(0,0,0,.75);z-index:1000;display:none;animation:up .18s ease;}
+    @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    #popup.show{display:block;}
+    #pcls{position:absolute;top:10px;right:12px;background:none;border:none;
+           color:#8b949e;font-size:20px;cursor:pointer;line-height:1;}
+    #pcls:hover{color:#e6edf3;}
+    #pname{font-size:13px;font-weight:600;margin-bottom:10px;padding-right:20px;line-height:1.4;}
+    .irow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #21262d;font-size:12px;}
+    .irow:last-child{border-bottom:none;}
+    .ik{color:#8b949e;} .iv{color:#e6edf3;font-weight:500;}
+    .legend-x{color:#ffd700;font-size:13px;font-weight:900;line-height:1;}
+    .legend-station{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:#8b949e;}
+    .leaflet-tooltip{background:#161b22;border:1px solid #30363d;color:#e6edf3;font-size:11px;padding:4px 8px;}
+    .leaflet-tooltip-top:before{border-top-color:#30363d;}
+  </style>
+</head>
+<body>
+<div id="header">
+  <h1>Roosevelt Blvd Subway — Food &amp; Retail Activity</h1>
+  <p>Food &amp; retail establishments within 10-minute walk of proposed stations · Click any point for details</p>
+</div>
+<div id="main">
+  <div id="sidebar">
+    <div class="sec-label">
+      Show
+      <span><a onclick="setAll(true)">All</a>&nbsp;·&nbsp;<a onclick="setAll(false)">None</a></span>
+    </div>
+    <div class="type-row">
+      <input type="checkbox" id="cb-food" checked onchange="onFilter()">
+      <div class="tdot" style="background:#f39c12"></div>
+      <label for="cb-food">Food &amp; Restaurant</label>
+    </div>
+    <div class="type-row">
+      <input type="checkbox" id="cb-retail" checked onchange="onFilter()">
+      <div class="tdot" style="background:#58a7e6"></div>
+      <label for="cb-retail">Retail</label>
+    </div>
+    <div class="legend-station"><span class="legend-x">✕</span>&nbsp;Proposed Station</div>
+    <hr class="div">
+    <div class="sec-label">Visible Summary</div>
+    <div class="stat-card">
+      <div class="stat-label">Establishments</div>
+      <div class="stat-value" id="s-count">—</div>
+    </div>
+    <hr class="div">
+    <div class="sec-label">By Station</div>
+    <div id="station-list" style="font-size:11px;color:#8b949e;"></div>
+  </div>
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="popup">
+      <button id="pcls" onclick="closePopup()">×</button>
+      <div id="pname"></div>
+      <div class="irow"><span class="ik">Type</span><span class="iv" id="pi-type"></span></div>
+      <div class="irow"><span class="ik">Nearest Station</span><span class="iv" id="pi-sta"></span></div>
+    </div>
+  </div>
+</div>
+<script>
+const POIS     = [{"lat": 40.0253764, "lng": -75.1217613, "name": "Dunkin'", "poi_type": "food", "station": "Rising Sun"}, {"lat": 40.0146826, "lng": -75.1303644, "name": "Dunkin'", "poi_type": "food", "station": "North 9th"}, {"lat": 40.0080956, "lng": -75.151203, "name": "City View Pizza", "poi_type": "food", "station": "Broad-Erie"}, {"lat": 40.0125402, "lng": -75.135514, "name": "Dunkin'", "poi_type": "food", "station": "North 9th"}, {"lat": 40.0122713, "lng": -75.1355369, "name": "Taco Bell", "poi_type": "food", "station": "North 9th"}, {"lat": 40.0944603, "lng": -75.0182135, "name": "Angela's Pizza", "poi_type": "food", "station": "Red Lion"}, {"lat": 40.0943962, "lng": -75.0182734, "name": "Happy Garden", "poi_type": "food", "station": "Red Lion"}, {"lat": 40.0297922, "lng": -75.099348, "name": "Panda Express", "poi_type": "food", "station": "Adams"}, {"lat": 40.0297457, "lng": -75.0994052, "name": "Domino's", "poi_type": "food", "station": "Adams"}, {"lat": 40.029022887449216, "lng": -75.09967066897548, "name": "Chick-fil-A", "poi_type": "food", "station": "Adams"}, {"lat": 40.02959159187899, "lng": -75.100415601191, "name": "United Buffet", "poi_type": "food", "station": "Adams"}, {"lat": 40.12044731578633, "lng": -74.98000855622887, "name": "Andy's Diner", "poi_type": "food", "station": "Neshaminy Mall"}, {"lat": 40.10425540300161, "lng": -75.00070080515721, "name": "Steve's Prince of Steaks", "poi_type": "food", "station": "Southampton"}, {"lat": 40.101773229303134, "lng": -75.00711321798136, "name": "Chickie's & Pete's Cafe", "poi_type": "food", "station": "Southampton"}, {"lat": 40.09628927810859, "lng": -75.01790717376953, "name": "Wit or Witout? Philly Cheesesteaks", "poi_type": "food", "station": "Red Lion"}, {"lat": 40.09661699566865, "lng": -75.01802247306914, "name": "Wendy's", "poi_type": "food", "station": "Red Lion"}, {"lat": 40.03157650889325, "lng": -75.10479449155824, "name": "KFC", "poi_type": "food", "station": "Adams"}, {"lat": 40.08173807831125, "lng": -75.02676599657032, "name": "Chick-fil-A", "poi_type": "food", "station": "Welsh-Grant"}, {"lat": 40.08273559146916, "lng": -75.02576001567925, "name": "Buffalo Wild Wings", "poi_type": "food", "station": "Welsh-Grant"}, {"lat": 40.122135490646194, "lng": -74.97595113451291, "name": "Dunkin'", "poi_type": "food", "station": "Neshaminy Mall"}, {"lat": 40.10504010534297, "lng": -75.0024837049753, "name": "Chick-fil-A", "poi_type": "food", "station": "Southampton"}, {"lat": 40.00642355794164, "lng": -75.14067842993164, "name": "Sabor Rico Bakery", "poi_type": "food", "station": "Broad-Erie"}, {"lat": 40.10440041706868, "lng": -75.00049410819794, "name": "The Union Tap", "poi_type": "food", "station": "Southampton"}, {"lat": 40.0375642, "lng": -75.0910499, "name": "Oxford Circle Farmers Market", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.0340461, "lng": -75.0897753, "name": "J & V Food Market Inc.", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.0132973, "lng": -75.1348992, "name": "Cousin's Supermarket", "poi_type": "retail", "station": "North 9th"}, {"lat": 40.0306181, "lng": -75.1027748, "name": "T-Mobile", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0955366, "lng": -75.0171055, "name": "Raymour & Flanigan Outlet", "poi_type": "retail", "station": "Red Lion"}, {"lat": 40.0949924, "lng": -75.0177375, "name": "Best Buy", "poi_type": "retail", "station": "Red Lion"}, {"lat": 40.0943353, "lng": -75.018338, "name": "Sherwin-Williams", "poi_type": "retail", "station": "Red Lion"}, {"lat": 40.0428046, "lng": -75.0881647, "name": "Public Storage", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.0421811, "lng": -75.0880174, "name": "Crash Champions", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.0250167, "lng": -75.1218467, "name": "L&H Auto Body Repair", "poi_type": "retail", "station": "Rising Sun"}, {"lat": 40.0291582, "lng": -75.1188409, "name": "Save-A-Lot", "poi_type": "retail", "station": "Rising Sun"}, {"lat": 40.0602951, "lng": -75.0452799, "name": "Acme", "poi_type": "retail", "station": "Cottman"}, {"lat": 40.0314555, "lng": -75.0996411, "name": "Walmart", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0318213, "lng": -75.1004263, "name": "PetSmart", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0322896, "lng": -75.1012291, "name": "Ross", "poi_type": "retail", "station": "Adams"}, {"lat": 40.030218, "lng": -75.1013936, "name": "Old Navy", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0306534, "lng": -75.1022931, "name": "Raymour & Flanigan", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0304768, "lng": -75.1027204, "name": "Dollar Tree", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0300524, "lng": -75.1016583, "name": "Five Below", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0319843, "lng": -75.100673, "name": "dd's Discounts", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0320418, "lng": -75.1009484, "name": "Hair Buzz", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0323238, "lng": -75.1016207, "name": "GameStop", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0324799, "lng": -75.1013972, "name": "Kid City", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0310464, "lng": -75.099112, "name": "Staples", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0296704, "lng": -75.0994875, "name": "America's Best Contacts & Eyeglasses", "poi_type": "retail", "station": "Adams"}, {"lat": 40.029543, "lng": -75.0995876, "name": "Xfinity", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0315475, "lng": -75.1002367, "name": "GNC", "poi_type": "retail", "station": "Adams"}, {"lat": 40.0071223, "lng": -75.1500258, "name": "Golden Eagle Jewelry", "poi_type": "retail", "station": "Broad-Erie"}, {"lat": 40.1065782, "lng": -75.0012284, "name": "Aldi", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.0696345, "lng": -75.0517493, "name": "Dollar Tree", "poi_type": "retail", "station": "Cottman"}, {"lat": 40.040638, "lng": -75.0767535, "name": "Family Dollar", "poi_type": "retail", "station": "Bustleton"}, {"lat": 40.033266, "lng": -75.08478, "name": "Family Dollar", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.0845184, "lng": -75.037421, "name": "K Laundry", "poi_type": "retail", "station": "Welsh-Grant"}, {"lat": 40.0873141, "lng": -75.0358692, "name": "Firestone", "poi_type": "retail", "station": "Welsh-Grant"}, {"lat": 40.03035847387687, "lng": -75.09788277341278, "name": "The Home Depot", "poi_type": "retail", "station": "Adams"}, {"lat": 40.02870419872467, "lng": -75.09927524872374, "name": "Pep Boys", "poi_type": "retail", "station": "Adams"}, {"lat": 40.12416938225315, "lng": -74.97526004872891, "name": "Faulkner Toyota Trevose", "poi_type": "retail", "station": "Neshaminy Mall"}, {"lat": 40.03304084172824, "lng": -75.08541336792986, "name": "Dollar General", "poi_type": "retail", "station": "Pratt"}, {"lat": 40.12123236779499, "lng": -74.97890935372654, "name": "Wawa", "poi_type": "retail", "station": "Neshaminy Mall"}, {"lat": 40.09338316660271, "lng": -75.01767755026464, "name": "Mattress Firm", "poi_type": "retail", "station": "Red Lion"}, {"lat": 40.10218565066862, "lng": -75.00808365788622, "name": "ShopRite", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.09314518564403, "lng": -75.01959021916969, "name": "Pep Boys", "poi_type": "retail", "station": "Red Lion"}, {"lat": 40.09170955121367, "lng": -75.03179543782122, "name": "Z Brothers Services Center", "poi_type": "retail", "station": "Welsh-Grant"}, {"lat": 40.03208749041908, "lng": -75.1032801331713, "name": "ALDI", "poi_type": "retail", "station": "Adams"}, {"lat": 40.12272838822115, "lng": -74.97498604337306, "name": "7-Eleven", "poi_type": "retail", "station": "Neshaminy Mall"}, {"lat": 40.04635161249294, "lng": -75.07023441585052, "name": "Wawa", "poi_type": "retail", "station": "Bustleton"}, {"lat": 40.03047628186878, "lng": -75.10457758981762, "name": "APlus", "poi_type": "retail", "station": "Adams"}, {"lat": 40.01419582088494, "lng": -75.12542151254665, "name": "nan", "poi_type": "retail", "station": "North 9th"}, {"lat": 40.064191063671046, "lng": -75.05442505882766, "name": "Wawa", "poi_type": "retail", "station": "Cottman"}, {"lat": 40.102673818488, "lng": -75.00598964539275, "name": "Faulkner Hyundai", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.103608035271435, "lng": -75.0069201106884, "name": "ABC Supply", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.1043123758996, "lng": -75.00341245829807, "name": "PA Auto Sales", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.10396431931723, "lng": -75.0040452985529, "name": "Ideal Tile", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.10309461506942, "lng": -75.00652027893969, "name": "Faulkner Hyundai Service Center", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.10422543051865, "lng": -75.00435418240687, "name": "Miller Truck Leasing", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.029695209757456, "lng": -75.09737749161279, "name": "nan", "poi_type": "retail", "station": "Adams"}, {"lat": 40.10618928471273, "lng": -75.00168673333332, "name": "Clean Up Fresh", "poi_type": "retail", "station": "Southampton"}, {"lat": 40.0459213, "lng": -75.0708652, "name": "Linc Electric Inc", "poi_type": "retail", "station": "Bustleton"}];
+const SHEDS    = [{"station": "Broad-Erie", "lons": [-75.1437938, -75.1504404, -75.1509828, -75.1514537, -75.1517083, -75.151683, -75.1500175, -75.1432242, -75.1416761, -75.1386526, -75.1358162, -75.133991, -75.1347874, -75.1365143, -75.1433611, -75.1437938], "lats": [40.0005735, 40.0028526, 40.0044672, 40.0061126, 40.0076787, 40.0077938, 40.0092329, 40.0129958, 40.0132615, 40.0123381, 40.0104205, 40.00703, 40.0056482, 40.0045651, 40.0007413, 40.0005735]}, {"station": "North 9th", "lons": [-75.131193, -75.136609, -75.1378338, -75.1386526, -75.137989, -75.137962, -75.1361513, -75.1335854, -75.130739, -75.1295556, -75.1272895, -75.1270487, -75.1245526, -75.1239289, -75.1269509, -75.131193], "lats": [40.0082488, 40.008491, 40.0091102, 40.0123381, 40.0154, 40.0155232, 40.0168083, 40.0180134, 40.019182, 40.0190308, 40.0187412, 40.0187104, 40.0139338, 40.0104682, 40.0092929, 40.0082488]}, {"station": "Rising Sun", "lons": [-75.1159396, -75.1164267, -75.1171509, -75.1231783, -75.1232807, -75.1236516, -75.118049, -75.1158818, -75.113416, -75.1120213, -75.1076905, -75.1079651, -75.1117042, -75.1129238, -75.113324, -75.1144072, -75.1153166, -75.1159396], "lats": [40.0185955, 40.01865, 40.01902, 40.0244733, 40.0246427, 40.0253182, 40.0299437, 40.0308728, 40.0310815, 40.0307743, 40.0282396, 40.0264871, 40.0216313, 40.0201408, 40.019841, 40.0191152, 40.0187809, 40.0185955]}, {"station": "Adams", "lons": [-75.0964694, -75.1016352, -75.1046351, -75.104741, -75.1052684, -75.105267, -75.1051642, -75.1051128, -75.0984591, -75.0983956, -75.0974695, -75.0939257, -75.0942071, -75.0945685, -75.0963811, -75.0964694], "lats": [40.0251632, 40.0255647, 40.0292172, 40.0297549, 40.0336431, 40.0337197, 40.0354957, 40.035548, 40.036208, 40.0362, 40.0354068, 40.0298718, 40.0274704, 40.0267794, 40.0252182, 40.0251632]}, {"station": "Pratt", "lons": [-75.0850592, -75.0931383, -75.0933224, -75.09392, -75.093977, -75.0937899, -75.0937772, -75.0924338, -75.0887004, -75.0886105, -75.0880514, -75.0829284, -75.0821233, -75.0804519, -75.080395, -75.0830578, -75.0850592], "lats": [40.0302138, 40.0306342, 40.0307544, 40.032647, 40.0332606, 40.0369988, 40.0372134, 40.039573, 40.0428047, 40.0428786, 40.0431059, 40.042109, 40.0401614, 40.0335222, 40.0330817, 40.0307202, 40.0302138]}, {"station": "Bustleton", "lons": [-75.0747426, -75.0795243, -75.0816148, -75.0819437, -75.0816221, -75.080987, -75.071279, -75.0696188, -75.069073, -75.0683542, -75.0667127, -75.066771, -75.0668411, -75.0705876, -75.0746315, -75.0747426], "lats": [40.0360514, 40.0372651, 40.040805, 40.0417641, 40.0465647, 40.047133, 40.048374, 40.0484082, 40.048109, 40.0477046, 40.0392889, 40.03923, 40.0391647, 40.0374699, 40.0360715, 40.0360514]}, {"station": "Cottman", "lons": [-75.0532903, -75.057122, -75.0580332, -75.0588041, -75.0592351, -75.0520233, -75.0506981, -75.0504901, -75.0459613, -75.0447836, -75.0444975, -75.0445605, -75.0446779, -75.0446914, -75.0451165, -75.048541, -75.0532903], "lats": [40.0563154, 40.057604, 40.0604149, 40.0641659, 40.0673033, 40.0696886, 40.0700434, 40.0699351, 40.0655251, 40.0611732, 40.0598164, 40.0593221, 40.0590023, 40.0589848, 40.0587274, 40.0575673, 40.0563154]}, {"station": "Rhawn", "lons": [-75.037464, -75.0462017, -75.0485909, -75.0418496, -75.0398889, -75.036436, -75.0352421, -75.0356228, -75.0373343, -75.0373723, -75.037464], "lats": [40.0706915, 40.0747349, 40.0790146, 40.080504, 40.0803623, 40.079112, 40.0752234, 40.0740568, 40.0708248, 40.0707856, 40.0706915]}, {"station": "Welsh-Grant", "lons": [-75.031727, -75.0379133, -75.0379904, -75.037626, -75.0331058, -75.0329509, -75.0323119, -75.0274122, -75.025916, -75.025203, -75.0241776, -75.0239905, -75.0241166, -75.0258619, -75.0260754, -75.031727], "lats": [40.080539, 40.083784, 40.0868539, 40.087338, 40.0914166, 40.0915442, 40.0917138, 40.0920831, 40.0909, 40.088991, 40.0849728, 40.0831899, 40.0830508, 40.0816888, 40.0816169, 40.080539]}, {"station": "Red Lion", "lons": [-75.0231265, -75.0232587, -75.027935, -75.0279812, -75.0280275, -75.0270144, -75.0268324, -75.0202234, -75.0164477, -75.0163991, -75.0171656, -75.0175673, -75.0177653, -75.0230205, -75.0231265], "lats": [40.0912113, 40.0912684, 40.095002, 40.0950865, 40.0951781, 40.0971051, 40.0972063, 40.0987578, 40.0977579, 40.0976765, 40.093187, 40.0927679, 40.0926587, 40.0912385, 40.0912113]}, {"station": "Southampton", "lons": [-75.0055738, -75.0077435, -75.0116551, -75.0111951, -75.0103218, -74.9994238, -74.9994168, -74.9993759, -74.9996349, -75.0055738], "lats": [40.100623, 40.1008423, 40.1080146, 40.108348, 40.1087356, 40.1067111, 40.1066854, 40.1043979, 40.1032621, 40.100623]}, {"station": "Old Lincoln", "lons": [-74.9908843, -74.9923565, -74.9949639, -74.9975322, -74.9980952, -74.9896166, -74.9855438, -74.9868234, -74.9869399, -74.9876614, -74.9908843], "lats": [40.1087512, 40.1087977, 40.1089908, 40.1128682, 40.1148753, 40.1156465, 40.1148311, 40.1096343, 40.1095208, 40.1092408, 40.1087512]}, {"station": "Neshaminy Mall", "lons": [-74.9798493, -74.9806908, -74.9816408, -74.9818692, -74.9796848, -74.9778184, -74.9766536, -74.9686816, -74.9685561, -74.970713, -74.97268, -74.9771077, -74.9798493], "lats": [40.1200536, 40.1203632, 40.1209516, 40.1231064, 40.124769, 40.1258874, 40.1264289, 40.1289163, 40.126511, 40.122822, 40.120775, 40.1203086, 40.1200536]}, {"station": "Frankford Transportation Center", "lons": [-75.0839653, -75.0841177, -75.0864909, -75.0866443, -75.0882297, -75.0881854, -75.0878869, -75.0824125, -75.0763395, -75.0748638, -75.0741124, -75.0726422, -75.072628, -75.0728131, -75.0756238, -75.0757569, -75.0839653], "lats": [40.0315705, 40.0316266, 40.0328066, 40.0329077, 40.0412493, 40.0415179, 40.0415958, 40.0427262, 40.0430246, 40.04211, 40.0397456, 40.0349615, 40.0348705, 40.0341284, 40.0334237, 40.0333904, 40.0315705]}];
+const STATIONS = [{"name": "Broad-Erie", "lat": 40.007, "lng": -75.1428}, {"name": "North 9th", "lat": 40.0125, "lng": -75.1315}, {"name": "Rising Sun", "lat": 40.0245, "lng": -75.1142}, {"name": "Adams", "lat": 40.0318, "lng": -75.0985}, {"name": "Pratt", "lat": 40.0365, "lng": -75.0875}, {"name": "Bustleton", "lat": 40.0428, "lng": -75.0742}, {"name": "Cottman", "lat": 40.0632, "lng": -75.052}, {"name": "Rhawn", "lat": 40.0745, "lng": -75.0425}, {"name": "Welsh-Grant", "lat": 40.0865, "lng": -75.0312}, {"name": "Red Lion", "lat": 40.0952, "lng": -75.0198}, {"name": "Southampton", "lat": 40.1045, "lng": -75.0068}, {"name": "Old Lincoln", "lat": 40.1125, "lng": -74.9925}, {"name": "Neshaminy Mall", "lat": 40.1235, "lng": -74.9745}, {"name": "Frankford Transportation Center", "lat": 40.0375, "lng": -75.0805}];
+const SUMMARY  = {"Adams": {"food": 5, "retail": 21, "total": 26}, "Broad-Erie": {"food": 2, "retail": 1, "total": 3}, "Bustleton": {"food": 0, "retail": 3, "total": 3}, "Cottman": {"food": 0, "retail": 3, "total": 3}, "Neshaminy Mall": {"food": 2, "retail": 3, "total": 5}, "North 9th": {"food": 3, "retail": 2, "total": 5}, "Pratt": {"food": 0, "retail": 6, "total": 6}, "Red Lion": {"food": 4, "retail": 5, "total": 9}, "Rising Sun": {"food": 1, "retail": 2, "total": 3}, "Southampton": {"food": 4, "retail": 9, "total": 13}, "Welsh-Grant": {"food": 2, "retail": 3, "total": 5}};
+
+const COLORS = {food:'#f39c12', retail:'#58a7e6'};
+const LABELS = {food:'Food / Restaurant', retail:'Retail'};
+
+const map = L.map('map').setView([40.06, -75.08], 12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap contributors © CARTO',
+  subdomains: 'abcd', maxZoom: 19,
+}).addTo(map);
+
+// Walk sheds
+for (const shed of SHEDS) {
+  const coords = shed.lats.map((lat,i) => [lat, shed.lons[i]]);
+  L.polygon(coords, {
+    color:'rgba(88,167,230,0.5)', weight:1.5,
+    fillColor:'#58a7e6', fillOpacity:0.06,
+  }).bindTooltip('<b>' + shed.station + '</b><br>10-min walk shed').addTo(map);
+}
+
+// POI layer groups
+const foodGroup   = L.layerGroup().addTo(map);
+const retailGroup = L.layerGroup().addTo(map);
+
+for (const p of POIS) {
+  const color = COLORS[p.poi_type] || '#8b949e';
+  const grp   = p.poi_type === 'food' ? foodGroup : retailGroup;
+  L.circleMarker([p.lat, p.lng], {
+    radius:4, fillColor:color, color:color, weight:0.5, fillOpacity:0.85,
+  })
+  .bindTooltip((p.name || 'Unnamed') + '<br>' + LABELS[p.poi_type] + ' · ' + p.station)
+  .on('click', () => showPopup(p))
+  .addTo(grp);
+}
+
+// Station markers
+const stationIcon = L.divIcon({
+  className: '',
+  html: '<span style="font-size:13px;font-weight:900;color:#ffd700;text-shadow:0 0 4px #000;' +
+        'line-height:1;display:block;text-align:center;">✕</span>',
+  iconSize:[14,14], iconAnchor:[7,7],
+});
+for (const s of STATIONS) {
+  L.marker([s.lat, s.lng], {icon:stationIcon, zIndexOffset:1000})
+   .bindTooltip('<b>' + s.name + '</b><br>Proposed Station')
+   .addTo(map);
+}
+
+// Station list in sidebar
+const listDiv = document.getElementById('station-list');
+const sorted = Object.entries(SUMMARY).sort((a,b) => b[1].total - a[1].total);
+for (const [name, cnt] of sorted) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #21262d;';
+  div.innerHTML = `<span>${name}</span><span style="color:#e6edf3;font-weight:600">${cnt.total}</span>`;
+  listDiv.appendChild(div);
+}
+
+// Popup
+function showPopup(p) {
+  document.getElementById('pname').textContent   = p.name || 'Unnamed Establishment';
+  document.getElementById('pi-type').textContent = LABELS[p.poi_type] || p.poi_type;
+  document.getElementById('pi-sta').textContent  = p.station;
+  const pop = document.getElementById('popup');
+  pop.classList.remove('show'); void pop.offsetWidth; pop.classList.add('show');
+}
+function closePopup() { document.getElementById('popup').classList.remove('show'); }
+
+// Filter
+function onFilter() {
+  const showFood   = document.getElementById('cb-food').checked;
+  const showRetail = document.getElementById('cb-retail').checked;
+  if (showFood)   map.addLayer(foodGroup);   else map.removeLayer(foodGroup);
+  if (showRetail) map.addLayer(retailGroup); else map.removeLayer(retailGroup);
+  updateStats();
+}
+function setAll(state) {
+  document.getElementById('cb-food').checked   = state;
+  document.getElementById('cb-retail').checked = state;
+  onFilter();
+}
+function updateStats() {
+  let count = 0;
+  if (document.getElementById('cb-food').checked)   count += POIS.filter(p=>p.poi_type==='food').length;
+  if (document.getElementById('cb-retail').checked) count += POIS.filter(p=>p.poi_type==='retail').length;
+  document.getElementById('s-count').textContent = count.toLocaleString();
+}
+updateStats();
+</script>
+</body>
+</html>
